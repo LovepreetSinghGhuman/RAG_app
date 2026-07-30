@@ -1,11 +1,15 @@
 import os
+import torch
 from langchain_community.document_loaders import TextLoader, DirectoryLoader
 from langchain_text_splitters import CharacterTextSplitter
-from langchain_openai import OpenAIEmbeddings
+from langchain_openai import OpenAIEmbeddings, embeddings
+from langchain_huggingface import HuggingFaceEmbeddings
 from langchain_chroma import Chroma
 from dotenv import load_dotenv
 
 load_dotenv()
+
+DEVICE = "cuda" if torch.cuda.is_available() else "cpu"  # Use GPU if available, otherwise fallback to CPU
 
 def load_docs(docs_path="docs"):
     print("Loading documents from the directory...")
@@ -34,16 +38,64 @@ def load_docs(docs_path="docs"):
     print("Documents loaded successfully.")
     return docs
 
+
+def chunk_docs(docs, chunk_size=800, chunk_overlap=0):
+    print("Chunking documents into smaller pieces (with overlap)...")
+
+    text_splitter = CharacterTextSplitter(
+        chunk_size=chunk_size,
+        chunk_overlap=chunk_overlap,
+        length_function=len
+    )
+    
+    chunks = text_splitter.split_documents(docs)
+
+    if chunks:
+        for i, chunk in enumerate(chunks):
+            print(f"Chunk {i+1}: {len(chunk.page_content)} characters")
+        print(f"Total chunks created: {len(chunks)}")
+
+    else:
+        print("No chunks were created from the documents.")
+    return chunks
+
+def create_embeddings_vector(chunks):
+    print("Creating embeddings for the chunks...")
+
+    # Using HuggingFaceEmbeddings instead of OpenAIEmbeddings for better performance and flexibility (offering multiple models and offline use)
+    embedding_model = HuggingFaceEmbeddings( 
+        model_name="BAAI/bge-small-en-v1.5",  # good balance of speed/quality for English text
+        model_kwargs={"device": DEVICE},        # change to "cuda" if NVIDIA GPU available; For ROCm check PyTorch ROCm support (rocm.7.2.1 and above)
+        encode_kwargs={"normalize_embeddings": True, "batch_size": 32},  # recommended for BGE models (cosine similarity)
+    )
+
+    print("Writing embeddings to the vector database...")
+    vector_db = Chroma.from_documents(
+        chunks,
+        embedding=embedding_model,
+        persist_directory="vector_db"
+    )
+
+    return vector_db
+
 def main():
-    print("Starting ingestion pipeline...")
+    if DEVICE == "cuda":
+        print("Using GPU for embeddings.")
+    else:
+        print("Using CPU for embeddings.")
+
     # 1. Load files
     documents = load_docs(docs_path="docs")
 
     # 2. Chunking the files into smaller pieces
-
+    if documents:
+        chunks = chunk_docs(documents)
+    else:
+        print("No documents to process. Exiting.")
+        return
 
     # 3. Create embeddings and Store them in a vector database (Currently using ChromaDB)
-
+    vector_db = create_embeddings_vector(chunks)
 
 
 if __name__ == "__main__":
