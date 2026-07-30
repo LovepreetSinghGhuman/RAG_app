@@ -26,7 +26,7 @@ LINKS = [
     "https://en.wikipedia.org/wiki/Google",
 ]
 
-OUTPUT_DIR = "wiki_output"
+OUTPUT_DIR = "docs"  # directory to save the .txt files
 
 # Wikipedia requires a descriptive User-Agent identifying the script/contact.
 # Replace the email with your own before running this for real.
