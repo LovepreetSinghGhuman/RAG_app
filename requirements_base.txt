@@ -1,0 +1,12 @@
+# ── LangChain dependencies ───────────────────────────────
+langchain
+langchain-community
+langchain-openai
+langchain-chroma
+langchain-text-splitters
+langchain-huggingface
+sentence-transformers
+chromadb
+
+# ── Python dependencies ──────────────────────────────────
+python-dotenv

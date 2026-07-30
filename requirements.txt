@@ -1,9 +1,0 @@
-# Langchain dependencies
-langchain
-langchain-community
-langchain-openai
-langchain-chroma
-chromadb
-
-# Python dependencies
-python-dotenv
