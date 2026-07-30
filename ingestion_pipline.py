@@ -18,7 +18,8 @@ def load_docs(docs_path="docs"):
     loader = DirectoryLoader(
         docs_path, 
         glob="**/*.txt", 
-        loader_cls=TextLoader
+        loader_cls=TextLoader, # TextLoader is used to load .txt files. You can change this to another loader if you have different file types. (WebLoader, PDFLoader, etc.)
+        loader_kwargs={"encoding": "utf-8"},  # Specify encoding (windows error default is 'cp1252', need 'utf-8' for most text files)
     )
 
     docs = loader.load()
@@ -30,15 +31,19 @@ def load_docs(docs_path="docs"):
     for i, doc in enumerate(docs):
         print(f"Document {i+1}: {doc.metadata.get('source', 'Unknown source')} - {len(doc.page_content)} characters")
 
-    print("Embeddings created and stored in ChromaDB.")
+    print("Documents loaded successfully.")
+    return docs
 
 def main():
     print("Starting ingestion pipeline...")
     # 1. Load files
     documents = load_docs(docs_path="docs")
-    # 2. Chuncking the files into smaller pieces
+
+    # 2. Chunking the files into smaller pieces
+
 
     # 3. Create embeddings and Store them in a vector database (Currently using ChromaDB)
+
 
 
 if __name__ == "__main__":
