@@ -7,7 +7,7 @@ langchain-text-splitters
 langchain-huggingface
 sentence-transformers
 chromadb
-transformers
+transformers<5.9.0
 
 # ── Python dependencies ──────────────────────────────────
 python-dotenv
