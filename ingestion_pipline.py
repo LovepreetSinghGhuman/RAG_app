@@ -1,8 +1,7 @@
 import os
 import torch
 from langchain_community.document_loaders import TextLoader, DirectoryLoader
-from langchain_text_splitters import CharacterTextSplitter
-from langchain_openai import OpenAIEmbeddings, embeddings
+from langchain_text_splitters import RecursiveCharacterTextSplitter
 from langchain_huggingface import HuggingFaceEmbeddings
 from langchain_chroma import Chroma
 from dotenv import load_dotenv
@@ -39,24 +38,19 @@ def load_docs(docs_path="docs"):
     return docs
 
 
-def chunk_docs(docs, chunk_size=800, chunk_overlap=0):
-    print("Chunking documents into smaller pieces (with overlap)...")
+def chunk_documents(docs, chunk_size=800, chunk_overlap=0):
+    print("Chunking documents into smaller pieces ...")
 
-    text_splitter = CharacterTextSplitter(
+    text_splitter = RecursiveCharacterTextSplitter(
         chunk_size=chunk_size,
         chunk_overlap=chunk_overlap,
-        length_function=len
+        length_function=len,
+        seperators=["\n\n", "\n", ". ", " ", ""],  # Prioritize splitting on paragraphs, then lines, then spaces, then characters
     )
     
     chunks = text_splitter.split_documents(docs)
 
-    if chunks:
-        for i, chunk in enumerate(chunks):
-            print(f"Chunk {i+1}: {len(chunk.page_content)} characters")
-        print(f"Total chunks created: {len(chunks)}")
-
-    else:
-        print("No chunks were created from the documents.")
+    print(f"Total chunks created: {len(chunks)}")
     return chunks
 
 def create_embeddings_vector(chunks):
@@ -89,7 +83,7 @@ def main():
 
     # 2. Chunking the files into smaller pieces
     if documents:
-        chunks = chunk_docs(documents)
+        chunks = chunk_documents(documents)
     else:
         print("No documents to process. Exiting.")
         return
