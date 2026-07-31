@@ -41,7 +41,7 @@ def load_docs(docs_path="docs"):
     return docs
 
 
-def chunk_documents(docs, chunk_size=800, chunk_overlap=0):
+def chunk_documents(docs_path, chunk_size=800, chunk_overlap=0):
     print("Chunking documents into smaller pieces ...")
 
     text_splitter = RecursiveCharacterTextSplitter(
@@ -51,7 +51,7 @@ def chunk_documents(docs, chunk_size=800, chunk_overlap=0):
         separators=["\n\n", "\n", ". ", " ", ""],  # Splitting on paragraphs > lines > spaces > characters
     )
     
-    chunks = text_splitter.split_documents(docs)
+    chunks = text_splitter.split_documents(docs_path)
 
     print(f"Total chunks created: {len(chunks)}")
     return chunks
@@ -64,7 +64,6 @@ def create_embeddings_vector(chunks, vector_db_path="db/chroma"):
         model_name="BAAI/bge-small-en-v1.5",  # good balance of speed/quality for English text
         model_kwargs={"device": DEVICE},        # change to "cuda" if NVIDIA GPU available; For ROCm check PyTorch ROCm support (rocm.7.2.1 and above)
         encode_kwargs={"normalize_embeddings": True, "batch_size": 32},  # recommended for BGE models (cosine similarity)
-        directory=vector_db_path
     )
 
     print("Writing embeddings to the vector database...")
@@ -88,14 +87,14 @@ def main():
 
     # 2. Chunking the files into smaller pieces
     if documents:
-        chunks = chunk_documents(documents, path="docs")
+        chunks = chunk_documents(documents)
     else:
         print("No documents to process. Exiting.")
         return
 
     # 3. Create embeddings and Store them in a vector database (Currently using ChromaDB)
     print("Creating embeddings and storing them in the vector database...")
-    vector_db = create_embeddings_vector(chunks)
+    vector_db = create_embeddings_vector(chunks, vector_db_path="db/chroma")
 
 
 if __name__ == "__main__":
