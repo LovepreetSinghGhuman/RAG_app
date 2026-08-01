@@ -31,55 +31,35 @@ db = Chroma(
 
 
 #  Search query for testing the retrieval pipeline
-# query = "In what year did Tesla begin production of the Roadster?"
-query = "What was Microsoft's first hardware product release?" 
-# retriever = db.as_retriever(search_kwargs={"k": 3})  # simpler alternative, less precise for RAG
- 
-retriever = db.as_retriever(
-    search_type="similarity_score_threshold",  # use similarity search with a minimum relevance bar
-    search_kwargs={
-        "k": 5,                  # retrieve top 5 documents
-        "score_threshold": 0.3,  # ...above a similarity score of 0.3
-    },
-)
- 
+# Search for relevant documents
+query = "How much did Microsoft pay to acquire GitHub?"
+
+retriever = db.as_retriever(search_kwargs={"k": 5})
+
+# retriever = db.as_retriever(
+#     search_type="similarity_score_threshold",
+#     search_kwargs={
+#         "k": 5,
+#         "score_threshold": 0.3  # Only return chunks with cosine similarity ≥ 0.3
+#     }
+# )
+
 relevant_docs = retriever.invoke(query)
- 
-print(f"Query: {query}")
-for i, doc in enumerate(relevant_docs):
-    print(f"\nDocument {i}:\n{doc.page_content}\n")
- 
-combined_input = f"""Based on the following documents, answer the question: {query}
- 
-Documents:
-{chr(10).join(f"- {doc.page_content}" for doc in relevant_docs)}
- 
-Please provide a concise and accurate answer based on the information from the documents. If the answer is not present in the documents, respond with "I don't know."
-"""
- 
-# Load an open, instruction-tuned HuggingFace chat model.
-# Qwen2.5-7B-Instruct: ungated (no HF access request needed), strong instruction
-# following, and comfortably fits RX 7900 XT in fp16. Swap model_id for any
-# other instruct/chat model if you prefer (e.g. "mistralai/Mistral-7B-Instruct-v0.3",
-# which is gated and requires accepting terms on huggingface.co first).
-llm = HuggingFacePipeline.from_model_id(
-    model_id="Qwen/Qwen2.5-7B-Instruct",
-    task="text-generation",
-    device_map="auto",
-    model_kwargs={"dtype": torch.float16},          # load weights in fp16 to fit VRAM
-    pipeline_kwargs={"temperature": 0.2, "max_new_tokens": 512, "do_sample": True},
-)
- 
-# ChatHuggingFace applies the model's chat template (system/user turns) on top of the
-# raw text-generation pipeline, and returns a proper AIMessage with .content — a plain
-# HuggingFacePipeline expects a raw string prompt, not chat messages.
-chat_model = ChatHuggingFace(llm=llm)
- 
-messages = [
-    SystemMessage(content="You are a helpful assistant that provides accurate information based on the provided documents."),
-    HumanMessage(content=combined_input),
-]
- 
-result = chat_model.invoke(messages)
- 
-print(f"\nAnswer:\n{result.content}\n")
+
+print(f"User Query: {query}")
+# Display results
+print("--- Context ---")
+for i, doc in enumerate(relevant_docs, 1):
+    print(f"Document {i}:\n{doc.page_content}\n")
+
+
+# Synthetic Questions: 
+
+# 1. "What was NVIDIA's first graphics accelerator called?"
+# 2. "Which company did NVIDIA acquire to enter the mobile processor market?"
+# 3. "What was Microsoft's first hardware product release?"
+# 4. "How much did Microsoft pay to acquire GitHub?"
+# 5. "In what year did Tesla begin production of the Roadster?"
+# 6. "Who succeeded Ze'ev Drori as CEO in October 2008?"
+# 7. "What was the name of the autonomous spaceport drone ship that achieved the first successful sea landing?"
+# 8. "What was the original name of Microsoft before it became Microsoft?"

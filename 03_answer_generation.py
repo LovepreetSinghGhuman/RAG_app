@@ -31,9 +31,7 @@ db = Chroma(
 
 
 #  Search query for testing the retrieval pipeline
-# query = "In what year did Tesla begin production of the Roadster?"
 query = "What was Microsoft's first hardware product release?" 
-# retriever = db.as_retriever(search_kwargs={"k": 3})  # simpler alternative, less precise for RAG
  
 retriever = db.as_retriever(
     search_type="similarity_score_threshold",  # use similarity search with a minimum relevance bar
@@ -44,17 +42,21 @@ retriever = db.as_retriever(
 )
  
 relevant_docs = retriever.invoke(query)
- 
-print(f"Query: {query}")
-for i, doc in enumerate(relevant_docs):
-    print(f"\nDocument {i}:\n{doc.page_content}\n")
- 
-combined_input = f"""Based on the following documents, answer the question: {query}
- 
+
+print(f"User Query: {query}")
+# Display results
+print("--- Context ---")
+for i, doc in enumerate(relevant_docs, 1):
+    print(f"Document {i}:\n{doc.page_content}\n")
+
+
+# Combine the query and the relevant document contents
+combined_input = f"""Based on the following documents, please answer this question: {query}
+
 Documents:
-{chr(10).join(f"- {doc.page_content}" for doc in relevant_docs)}
- 
-Please provide a concise and accurate answer based on the information from the documents. If the answer is not present in the documents, respond with "I don't know."
+{chr(10).join([f"- {doc.page_content}" for doc in relevant_docs])}
+
+Please provide a clear, helpful answer using only the information from these documents. If you can't find the answer in the documents, say "I don't have enough information to answer that question based on the provided documents."
 """
  
 # Load an open, instruction-tuned HuggingFace chat model.
@@ -75,11 +77,18 @@ llm = HuggingFacePipeline.from_model_id(
 # HuggingFacePipeline expects a raw string prompt, not chat messages.
 chat_model = ChatHuggingFace(llm=llm)
  
+# Define the messages for the model
 messages = [
-    SystemMessage(content="You are a helpful assistant that provides accurate information based on the provided documents."),
+    SystemMessage(content="You are a helpful assistant."),
     HumanMessage(content=combined_input),
 ]
- 
-result = chat_model.invoke(messages)
- 
-print(f"\nAnswer:\n{result.content}\n")
+
+# Invoke the model with the combined input
+result = model.invoke(messages)
+
+# Display the full result and content only
+print("\n--- Generated Response ---")
+# print("Full result:")
+# print(result)
+print("Content only:")
+print(result.content)
