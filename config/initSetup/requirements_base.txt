@@ -8,6 +8,7 @@ langchain-huggingface
 sentence-transformers
 chromadb
 transformers<5.9.0
+accelerate
 
 # ── Python dependencies ──────────────────────────────────
 python-dotenv
