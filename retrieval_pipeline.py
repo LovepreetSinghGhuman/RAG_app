@@ -31,8 +31,8 @@ db = Chroma(
 
 
 #  Search query for testing the retrieval pipeline
-query = "In what year did Tesla begin production of the Roadster?"  # Example query (testing)
- 
+# query = "In what year did Tesla begin production of the Roadster?"
+query = "What was Microsoft's first hardware product release?" 
 # retriever = db.as_retriever(search_kwargs={"k": 3})  # simpler alternative, less precise for RAG
  
 retriever = db.as_retriever(
