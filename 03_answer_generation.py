@@ -84,7 +84,7 @@ messages = [
 ]
 
 # Invoke the model with the combined input
-result = model.invoke(messages)
+result = chat_model.invoke(messages)
 
 # Display the full result and content only
 print("\n--- Generated Response ---")
