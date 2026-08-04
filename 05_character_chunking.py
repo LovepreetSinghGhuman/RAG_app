@@ -37,26 +37,23 @@ def chunk_documents_character(docs_path, chunk_size=1000, chunk_overlap=0):
     return chunks
 
 def main():
-    if DEVICE == "cuda":
-        print("Using GPU for embeddings.")
-    else:
-        print("Using CPU for embeddings.")
+    print(f"Using {'GPU' if DEVICE == 'cuda' else 'CPU'} for embeddings.")
 
     # 1. Load files
     documents = load_docs(docs_path="docs")
 
     # 2. Chunking the files into smaller pieces and printing
-    if documents:
-        chunks = chunk_documents_character(documents)
-        if chunks:
-            print("Example chunk:")
-            print(chunks[0].page_content[:1000])
-            print("-" * 50)
-            print(chunks[1].page_content[:1000])
-            print("-" * 50)
-    else:
-        print("No documents to process. Exiting.")
-        return
+    chunks = chunk_documents_character(documents)
+    if not chunks:
+            print("No chunks created. Exiting.")
+            return
+    
+    # Preview the first two chunks to sanity-check the splitting output
+    print("Example chunks:")
+    for i, chunk in enumerate(chunks[:5]):
+        print(f"[Chunk {i}]")
+        print(chunk.page_content[:1000])
+        print("-" * 50)
 
 
 if __name__ == "__main__":
