@@ -2,16 +2,19 @@ import os
 import torch
 import warnings
 
-warnings.filterwarnings("ignore", message="Using AOTriton backend for Efficient Attention")
 from langchain_community.document_loaders import TextLoader, DirectoryLoader
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 from langchain_huggingface import HuggingFaceEmbeddings
 from langchain_chroma import Chroma
 from dotenv import load_dotenv
 
+warnings.filterwarnings("ignore")
 load_dotenv()
 
-DEVICE = "cuda" if torch.cuda.is_available() else "cpu"  # Use GPU if available, otherwise fallback to CPU
+# --- Setup ---
+DEVICE = "cuda" if torch.cuda.is_available() else "cpu"  # Use GPU if available, else fallback to CPU
+DB_PATH = os.getenv("VECTOR_DB_PATH", "db/chroma")  # Vector DB storage path, overridable via .env
+
 
 def load_docs(docs_path="docs"):
     print("Loading documents from the directory...")
@@ -76,24 +79,30 @@ def create_embeddings_vector(chunks, vector_db_path="db/chroma"):
     return vector_db
 
 def main():
-    if DEVICE == "cuda":
-        print("Using GPU for embeddings.")
-    else:
-        print("Using CPU for embeddings.")
+    print(f"Using {'GPU' if DEVICE == 'cuda' else 'CPU'} for embeddings.")
 
-    # 1. Load files
+    # 1. Load raw documents from the docs folder
     documents = load_docs(docs_path="docs")
-
-    # 2. Chunking the files into smaller pieces
-    if documents:
-        chunks = chunk_documents(documents)
-    else:
+    if not documents:
         print("No documents to process. Exiting.")
         return
 
-    # 3. Create embeddings and Store them in a vector database (Currently using ChromaDB)
+    # 2. Split documents into smaller, fixed-size chunks
+    chunks = chunk_documents(documents)
+    if not chunks:
+        print("No chunks created. Exiting.")
+        return
+
+    # Preview the first two chunks to sanity-check the splitting output
+    print("Example chunks:")
+    for i, chunk in enumerate(chunks[:5]):
+        print(f"[Chunk {i}]")
+        print(chunk.page_content[:1000])
+        print("-" * 50)
+
+    # 3. Generate embeddings and store chunks in the vector database
     print("Creating embeddings and storing them in the vector database...")
-    vector_db = create_embeddings_vector(chunks, vector_db_path="db/chroma")
+    vector_db = create_embeddings_vector(chunks, vector_db_path=DB_PATH)
 
 
 if __name__ == "__main__":

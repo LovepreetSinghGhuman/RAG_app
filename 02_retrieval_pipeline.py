@@ -1,7 +1,7 @@
 import os
-import warnings
- 
 import torch
+import warnings
+
 from dotenv import load_dotenv
 from langchain_chroma import Chroma
 from langchain_core.messages import HumanMessage, SystemMessage
@@ -10,10 +10,9 @@ from langchain_huggingface import ChatHuggingFace, HuggingFaceEmbeddings, Huggin
 warnings.filterwarnings("ignore")
 load_dotenv()
 
-
-# SETUP
-DEVICE = "cuda" if torch.cuda.is_available() else "cpu"  # Use GPU if available, otherwise fallback to CPU
-DBPATH = os.getenv("VECTOR_DB_PATH", "db/chroma")  # Default path env or "db/chroma"
+# --- Setup ---
+DEVICE = "cuda" if torch.cuda.is_available() else "cpu"  # Use GPU if available, else fallback to CPU
+DB_PATH = os.getenv("VECTOR_DB_PATH", "db/chroma")  # Vector DB storage path, overridable via .env
  
 # IMPORTANT: model_name and encode_kwargs must match ingestion_pipline.py exactly.
 # A mismatch here silently produces a different vector space than the one your documents were embedded into, which breaks similarity search.
@@ -24,7 +23,7 @@ embedding_model = HuggingFaceEmbeddings(
 )
  
 db = Chroma(
-    persist_directory=DBPATH,
+    persist_directory=DB_PATH,
     embedding_function=embedding_model,
     collection_metadata={"hnsw:space": "cosine"},
 )
