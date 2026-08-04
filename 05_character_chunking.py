@@ -58,13 +58,12 @@ llm = HuggingFacePipeline.from_model_id(
 chat_model = ChatHuggingFace(llm=llm)
 
 
-def chunk_documents_character(docs_path, chunk_size=800, chunk_overlap=0):
+def chunk_documents_character(docs_path, chunk_size=1000, chunk_overlap=0):
     print("Chunking documents into smaller pieces ...")
 
     text_splitter = CharacterTextSplitter(
         chunk_size=chunk_size,
         chunk_overlap=chunk_overlap,
-        length_function=len,
     )
     
     chunks = text_splitter.split_documents(docs_path)
@@ -81,12 +80,14 @@ def main():
     # 1. Load files
     documents = load_docs(docs_path="docs")
 
-    # 2. Chunking the files into smaller pieces
+    # 2. Chunking the files into smaller pieces and printing
     if documents:
         chunks = chunk_documents_character(documents)
         if chunks:
             print("Example chunk:")
             print(chunks[0].page_content[:1000])
+            print("-" * 50)
+            print(chunks[1].page_content[:1000])
             print("-" * 50)
     else:
         print("No documents to process. Exiting.")
