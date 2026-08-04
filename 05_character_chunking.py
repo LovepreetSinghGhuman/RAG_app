@@ -14,7 +14,6 @@ load_dotenv()
 
 module = importlib.import_module("01_ingestion_pipline")
 load_docs = module.load_docs
-create_embeddings_vector = module.create_embeddings_vector
 
 # --- Setup ---
 DEVICE = "cuda" if torch.cuda.is_available() else "cpu"  # Use GPU if available, else fallback to CPU
@@ -24,18 +23,10 @@ DB_PATH = os.getenv("VECTOR_DB_PATH", "db/chroma")  # Vector DB storage path, ov
 # Here we are implementing the "Character" chunking strategy, which splits documents into smaller pieces based on character count.
 # This is useful for processing large documents that may exceed model input limits or for creating more manageable chunks for embedding and retrieval.
 
-# Using HuggingFaceEmbeddings instead of OpenAIEmbeddings for better performance and flexibility (offering multiple models and offline use)
-embedding_model = HuggingFaceEmbeddings( 
-    model_name="BAAI/bge-small-en-v1.5",  # good balance of speed/quality for English text
-    model_kwargs={"device": DEVICE},        # change to "cuda" if NVIDIA GPU available; For ROCm check PyTorch ROCm support (rocm.7.2.1 and above)
-    encode_kwargs={"normalize_embeddings": True, "batch_size": 32},  # recommended for BGE models (cosine similarity)
-)
-
 def chunk_documents_character(docs_path, chunk_size=1000, chunk_overlap=0):
     print("Chunking documents into smaller pieces ...")
 
     text_splitter = CharacterTextSplitter(
-        embedding_model=embedding_model,
         chunk_size=chunk_size,
         chunk_overlap=chunk_overlap,
     )
