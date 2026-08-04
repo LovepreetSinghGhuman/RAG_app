@@ -4,6 +4,7 @@ langchain-community
 langchain-openai
 langchain-chroma
 langchain-text-splitters
+langchain_experimental
 langchain-huggingface
 sentence-transformers
 chromadb
