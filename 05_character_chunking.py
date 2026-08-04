@@ -1,7 +1,6 @@
 import os
 import warnings
 import importlib
-from langchain_text_splitters import CharacterTextSplitter
 import torch
 
 
@@ -9,6 +8,7 @@ from dotenv import load_dotenv
 from langchain_chroma import Chroma
 from langchain_core.messages import HumanMessage, SystemMessage, AIMessage
 from langchain_huggingface import ChatHuggingFace, HuggingFaceEmbeddings, HuggingFacePipeline
+from langchain_text_splitters import CharacterTextSplitter
  
 warnings.filterwarnings("ignore")
 load_dotenv()
@@ -23,6 +23,7 @@ DBPATH = os.getenv("VECTOR_DB_PATH", "db/chroma")  # Default path env or "db/chr
 
 
 # 5 types of chunking/splitting strategies: "Recursive", "Character", "Document-Specific", "Semantic", "Agentic"
+# Here we are implementing the "Character" chunking strategy, which splits documents into smaller pieces based on character count. This is useful for processing large documents that may exceed model input limits or for creating more manageable chunks for embedding and retrieval.
 
 # IMPORTANT: model_name and encode_kwargs must match ingestion_pipline.py exactly.
 # A mismatch here silently produces a different vector space than the one your documents were embedded into, which breaks similarity search.
@@ -64,7 +65,6 @@ def chunk_documents_character(docs_path, chunk_size=800, chunk_overlap=0):
         chunk_size=chunk_size,
         chunk_overlap=chunk_overlap,
         length_function=len,
-        separators=["\n\n", "\n", ". ", " ", ""],  # Splitting on paragraphs > lines > spaces > characters
     )
     
     chunks = text_splitter.split_documents(docs_path)
@@ -84,13 +84,13 @@ def main():
     # 2. Chunking the files into smaller pieces
     if documents:
         chunks = chunk_documents_character(documents)
+        if chunks:
+            print("Example chunk:")
+            print(chunks[0].page_content[:1000])
+            print("-" * 50)
     else:
         print("No documents to process. Exiting.")
         return
-
-    # 3. Create embeddings and Store them in a vector database (Currently using ChromaDB)
-    print("Creating embeddings and storing them in the vector database...")
-    vector_db = create_embeddings_vector(chunks, vector_db_path="db/chroma")
 
 
 if __name__ == "__main__":
