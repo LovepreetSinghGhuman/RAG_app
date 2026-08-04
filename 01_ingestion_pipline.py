@@ -45,13 +45,12 @@ def chunk_documents(docs_path, chunk_size=800, chunk_overlap=0):
     print("Chunking documents into smaller pieces ...")
 
     text_splitter = RecursiveCharacterTextSplitter(
+        separators=["\n\n", "\n", ". ", " ", ""],  # Splitting on paragraphs > lines > spaces > characters
         chunk_size=chunk_size,
         chunk_overlap=chunk_overlap,
-        length_function=len,
-        separators=["\n\n", "\n", ". ", " ", ""],  # Splitting on paragraphs > lines > spaces > characters
     )
     
-    chunks = text_splitter.split_documents(docs_path)
+    chunks = text_splitter.split_documents(docs_path) # Using .split_documents() instead of .split_text() (better for handling metadata/traceability and document structure)
 
     print(f"Total chunks created: {len(chunks)}")
     return chunks
