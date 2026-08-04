@@ -30,13 +30,14 @@ embedding_model = HuggingFaceEmbeddings(
     encode_kwargs={"normalize_embeddings": True, "batch_size": 32},  # recommended for BGE models (cosine similarity)
 )
 
-def chunk_documents_semantic(docs_path, chunk_size=1000, chunk_overlap=0):
+def chunk_documents_semantic(docs_path):
     print("Chunking documents into smaller pieces ...")
 
     text_splitter = SemanticChunker(
-        embedding_model=embedding_model, # embedding model needed for semantic similarity calculations for "Character" and "Recursive" not needed
-        chunk_size=chunk_size,
-        chunk_overlap=chunk_overlap,
+        embeddings=embedding_model, # embedding model needed for semantic similarity calculations for "Character" and "Recursive" not needed
+        breakpoint_threshold_amount=90,  # threshold for semantic similarity; lower values result in more chunks
+        breakpoint_threshold_type="percentile",  # type of similarity metric to use; "cosine" is recommended for BGE models
+        min_chunk_size=200,  # minimum chunk size in characters; smaller values result in more chunks
     )
     
     chunks = text_splitter.split_documents(docs_path)
