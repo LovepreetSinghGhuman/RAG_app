@@ -3,7 +3,6 @@ import warnings
 import importlib
 import torch
 
-
 from dotenv import load_dotenv
 from langchain_chroma import Chroma
 from langchain_core.messages import HumanMessage, SystemMessage, AIMessage
@@ -17,51 +16,26 @@ module = importlib.import_module("01_ingestion_pipline")
 load_docs = module.load_docs
 create_embeddings_vector = module.create_embeddings_vector
 
-# SETUP
-DEVICE = "cuda" if torch.cuda.is_available() else "cpu"  # Use GPU if available, otherwise fallback to CPU
-DBPATH = os.getenv("VECTOR_DB_PATH", "db/chroma")  # Default path env or "db/chroma"
-
+# --- Setup ---
+DEVICE = "cuda" if torch.cuda.is_available() else "cpu"  # Use GPU if available, else fallback to CPU
+DB_PATH = os.getenv("VECTOR_DB_PATH", "db/chroma")  # Vector DB storage path, overridable via .env
 
 # 5 types of chunking/splitting strategies: "Recursive", "Character", "Document-Specific", "Semantic", "Agentic"
-# Here we are implementing the "Character" chunking strategy, which splits documents into smaller pieces based on character count. This is useful for processing large documents that may exceed model input limits or for creating more manageable chunks for embedding and retrieval.
+# Here we are implementing the "Character" chunking strategy, which splits documents into smaller pieces based on character count.
+# This is useful for processing large documents that may exceed model input limits or for creating more manageable chunks for embedding and retrieval.
 
-# IMPORTANT: model_name and encode_kwargs must match ingestion_pipline.py exactly.
-# A mismatch here silently produces a different vector space than the one your documents were embedded into, which breaks similarity search.
-embedding_model = HuggingFaceEmbeddings(
-    model_name="BAAI/bge-small-en-v1.5",  # must match ingestion_pipline.py
-    model_kwargs={"device": DEVICE},
-    encode_kwargs={"normalize_embeddings": True},  # must match ingestion_pipline.py
+# Using HuggingFaceEmbeddings instead of OpenAIEmbeddings for better performance and flexibility (offering multiple models and offline use)
+embedding_model = HuggingFaceEmbeddings( 
+    model_name="BAAI/bge-small-en-v1.5",  # good balance of speed/quality for English text
+    model_kwargs={"device": DEVICE},        # change to "cuda" if NVIDIA GPU available; For ROCm check PyTorch ROCm support (rocm.7.2.1 and above)
+    encode_kwargs={"normalize_embeddings": True, "batch_size": 32},  # recommended for BGE models (cosine similarity)
 )
- 
-db = Chroma(
-    persist_directory=DBPATH,
-    embedding_function=embedding_model,
-    collection_metadata={"hnsw:space": "cosine"},
-)
-
-# Setup AI model
-llm = HuggingFacePipeline.from_model_id(
-    model_id="Qwen/Qwen2.5-7B-Instruct",
-    task="text-generation",
-    device_map="auto",
-    model_kwargs={"dtype": torch.float16},          # load weights in fp16 to fit VRAM
-    pipeline_kwargs={
-        "temperature": 0.2,
-        "do_sample": True,          # required for temperature to have any effect
-        "max_new_tokens": 512,      # explicit cap, avoids conflicting with the model's default max_length=20
-        "return_full_text": False,  # return ONLY the generated answer, not prompt+answer glued together
-    },
-)
-
-# ChatHuggingFace applies the model's chat template and returns a proper AIMessage
-# with .content — invoking a raw HuggingFacePipeline with chat messages does not do this.
-chat_model = ChatHuggingFace(llm=llm)
-
 
 def chunk_documents_character(docs_path, chunk_size=1000, chunk_overlap=0):
     print("Chunking documents into smaller pieces ...")
 
     text_splitter = CharacterTextSplitter(
+        embedding_model=embedding_model,
         chunk_size=chunk_size,
         chunk_overlap=chunk_overlap,
     )
