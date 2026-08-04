@@ -78,32 +78,28 @@ def create_embeddings_vector(chunks, vector_db_path="db/chroma"):
 
     return vector_db
 
-def main():
-    print(f"Using {'GPU' if DEVICE == 'cuda' else 'CPU'} for embeddings.")
 
-    # 1. Load raw documents from the docs folder
-    documents = load_docs(docs_path="docs")
-    if not documents:
-        print("No documents to process. Exiting.")
-        return
+print(f"Using {'GPU' if DEVICE == 'cuda' else 'CPU'} for embeddings.")
 
-    # 2. Split documents into smaller, fixed-size chunks
-    chunks = chunk_documents(documents)
-    if not chunks:
-        print("No chunks created. Exiting.")
-        return
+# 1. Load raw documents from the docs folder
+documents = load_docs(docs_path="docs")
+if not documents:
+    print("No documents to process. Exiting.")
+    pass
 
-    # Preview the first two chunks to sanity-check the splitting output
-    print("Example chunks:")
-    for i, chunk in enumerate(chunks[:5]):
-        print(f"[Chunk {i}]")
-        print(chunk.page_content[:1000])
-        print("-" * 50)
+# 2. Split documents into smaller, fixed-size chunks
+chunks = chunk_documents(documents)
+if not chunks:
+    print("No chunks created. Exiting.")
+    pass
 
-    # 3. Generate embeddings and store chunks in the vector database
-    print("Creating embeddings and storing them in the vector database...")
-    vector_db = create_embeddings_vector(chunks, vector_db_path=DB_PATH)
+# Preview the first two chunks to sanity-check the splitting output
+print("Example chunks:")
+for i, chunk in enumerate(chunks[:5]):
+    print(f"[Chunk {i}]")
+    print(chunk.page_content[:1000])
+    print("-" * 50)
 
-
-if __name__ == "__main__":
-    main()
+# 3. Generate embeddings and store chunks in the vector database
+print("Creating embeddings and storing them in the vector database...")
+vector_db = create_embeddings_vector(chunks, vector_db_path=DB_PATH)

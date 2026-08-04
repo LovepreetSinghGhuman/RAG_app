@@ -45,25 +45,21 @@ def chunk_documents_semantic(docs_path):
     print(f"Total chunks created: {len(chunks)}")
     return chunks
 
-def main():
-    print(f"Using {'GPU' if DEVICE == 'cuda' else 'CPU'} for embeddings.")
+# --- Main ---
+print(f"Using {'GPU' if DEVICE == 'cuda' else 'CPU'} for embeddings.")
 
-    # 1. Load files
-    documents = load_docs(docs_path="docs")
+# 1. Load files
+documents = load_docs(docs_path="docs")
 
-    # 2. Chunking the files into smaller pieces and printing
-    chunks = chunk_documents_semantic(documents)
-    if not chunks:
-            print("No chunks created. Exiting.")
-            return
-    
-    # Preview the first two chunks to sanity-check the splitting output
-    print("Example chunks:")
-    for i, chunk in enumerate(chunks[:5]):
-        print(f"[Chunk {i}]")
-        print(chunk.page_content[:1000])
-        print("-" * 50)
+# 2. Chunking the files into smaller pieces and printing
+chunks = chunk_documents_semantic(documents)
+if not chunks:
+        print("No chunks created. Exiting.")
+        pass
 
-
-if __name__ == "__main__":
-    main()
+# Preview the first two chunks to sanity-check the splitting output
+print("Example chunks:")
+for i, chunk in enumerate(chunks[:5]):
+    print(f"[Chunk {i}]")
+    print(chunk.page_content[:1000])
+    print("-" * 50)
