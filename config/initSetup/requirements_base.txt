@@ -29,7 +29,6 @@ accelerate
 # ── OCR and image processing ────────────────────────────
 pytesseract
 pillow
-tesseract-ocr
 
 # ── Environment configuration ───────────────────────────
 python-dotenv
