@@ -1,27 +1,33 @@
-import os
+import sys
 import torch
 import warnings
- 
+from pathlib import Path
+
+# Anchor the import to this script's own location so it works regardless of
+# the working directory the script is run from.
+sys.path.insert(0, str(Path(__file__).parent))
+
 from dotenv import load_dotenv
 from langchain_chroma import Chroma
 from langchain_core.messages import HumanMessage, SystemMessage, AIMessage
 from langchain_huggingface import ChatHuggingFace, HuggingFaceEmbeddings, HuggingFacePipeline
- 
+
+from config.config import DEVICE, DB_PATH, EMBEDDING_MODEL_NAME, EMBEDDING_KWARGS
+
 warnings.filterwarnings("ignore")
 load_dotenv()
 
 # --- Setup ---
-DEVICE = "cuda" if torch.cuda.is_available() else "cpu"  # Use GPU if available, else fallback to CPU
-DB_PATH = os.getenv("VECTOR_DB_PATH", "db/chroma")  # Vector DB storage path, overridable via .env
- 
-# IMPORTANT: model_name and encode_kwargs must match ingestion_pipline.py exactly.
-# A mismatch here silently produces a different vector space than the one your documents were embedded into, which breaks similarity search.
+# model_name and encode_kwargs come from config.config, so they're guaranteed
+# to match ingestion_pipline.py exactly. A mismatch here would silently
+# produce a different vector space than the one your documents were embedded
+# into, which breaks similarity search.
 embedding_model = HuggingFaceEmbeddings(
-    model_name="BAAI/bge-small-en-v1.5",  # must match ingestion_pipline.py
+    model_name=EMBEDDING_MODEL_NAME,
     model_kwargs={"device": DEVICE},
-    encode_kwargs={"normalize_embeddings": True},  # must match ingestion_pipline.py
+    encode_kwargs=EMBEDDING_KWARGS,
 )
- 
+
 db = Chroma(
     persist_directory=DB_PATH,
     embedding_function=embedding_model,
@@ -78,10 +84,11 @@ def ask_question(user_question):
         print(f"  Doc {i}: {preview}...")
     
     # Step 3: Create final prompt
+    docs_block = "\n".join([f"- {doc.page_content}" for doc in docs])
     combined_input = f"""Based on the following documents, please answer this question: {user_question}
 
     Documents:
-    {"\n".join([f"- {doc.page_content}" for doc in docs])}
+    {docs_block}
 
     Please provide a clear, helpful answer using only the information from these documents. If you can't find the answer in the documents, say "I don't have enough information to answer that question based on the provided documents."
     """
