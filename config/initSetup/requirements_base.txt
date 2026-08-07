@@ -19,6 +19,7 @@ langchain-chroma
 langchain-text-splitters
 langchain_experimental
 langchain-huggingface
+rank-bm25
 
 # ── Embedding and model inference ───────────────────────
 sentence-transformers
