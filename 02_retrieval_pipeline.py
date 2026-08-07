@@ -1,27 +1,31 @@
-import os
-import torch
+import sys
 import warnings
+from pathlib import Path
+
+# Anchor the import to this script's own location so it works regardless of
+# the working directory the script is run from.
+sys.path.insert(0, str(Path(__file__).parent))
 
 from dotenv import load_dotenv
 from langchain_chroma import Chroma
-from langchain_core.messages import HumanMessage, SystemMessage
-from langchain_huggingface import ChatHuggingFace, HuggingFaceEmbeddings, HuggingFacePipeline
- 
+from langchain_huggingface import HuggingFaceEmbeddings
+
+from config.config import DEVICE, DB_PATH, EMBEDDING_MODEL_NAME, EMBEDDING_KWARGS
+
 warnings.filterwarnings("ignore")
 load_dotenv()
 
 # --- Setup ---
-DEVICE = "cuda" if torch.cuda.is_available() else "cpu"  # Use GPU if available, else fallback to CPU
-DB_PATH = os.getenv("VECTOR_DB_PATH", "db/chroma")  # Vector DB storage path, overridable via .env
- 
-# IMPORTANT: model_name and encode_kwargs must match ingestion_pipline.py exactly.
-# A mismatch here silently produces a different vector space than the one your documents were embedded into, which breaks similarity search.
+# model_name and encode_kwargs come from config.config, so they're guaranteed
+# to match ingestion_pipline.py exactly. A mismatch here would silently
+# produce a different vector space than the one your documents were embedded
+# into, which breaks similarity search.
 embedding_model = HuggingFaceEmbeddings(
-    model_name="BAAI/bge-small-en-v1.5",  # must match ingestion_pipline.py
+    model_name=EMBEDDING_MODEL_NAME,
     model_kwargs={"device": DEVICE},
-    encode_kwargs={"normalize_embeddings": True},  # must match ingestion_pipline.py
+    encode_kwargs=EMBEDDING_KWARGS,
 )
- 
+
 db = Chroma(
     persist_directory=DB_PATH,
     embedding_function=embedding_model,
@@ -29,31 +33,31 @@ db = Chroma(
 )
 
 
-#  Search query for testing the retrieval pipeline
-# Search for relevant documents
-query = "How much did Microsoft pay to acquire GitHub?"
+if __name__ == "__main__":
+    # Search query for testing the retrieval pipeline
+    query = "How much did Microsoft pay to acquire GitHub?"
 
-retriever = db.as_retriever(search_kwargs={"k": 5})
+    retriever = db.as_retriever(search_kwargs={"k": 5})
 
-# retriever = db.as_retriever(
-#     search_type="similarity_score_threshold",
-#     search_kwargs={
-#         "k": 5,
-#         "score_threshold": 0.3  # Only return chunks with cosine similarity ≥ 0.3
-#     }
-# )
+    # retriever = db.as_retriever(
+    #     search_type="similarity_score_threshold",
+    #     search_kwargs={
+    #         "k": 5,
+    #         "score_threshold": 0.3  # Only return chunks with cosine similarity ≥ 0.3
+    #     }
+    # )
 
-relevant_docs = retriever.invoke(query)
+    relevant_docs = retriever.invoke(query)
 
-print(f"User Query: {query}")
-# Display results
-print("--- Context ---")
-for i, doc in enumerate(relevant_docs, 1):
-    print(f"Document {i}:\n{doc.page_content}\n")
+    print(f"User Query: {query}")
+    # Display results
+    print("--- Context ---")
+    for i, doc in enumerate(relevant_docs, 1):
+        print(f"Document {i}:\n{doc.page_content}\n")
 
 
-# Synthetic Questions: 
-
+# Synthetic Questions:
+#
 # 1. "What was NVIDIA's first graphics accelerator called?"
 # 2. "Which company did NVIDIA acquire to enter the mobile processor market?"
 # 3. "What was Microsoft's first hardware product release?"
