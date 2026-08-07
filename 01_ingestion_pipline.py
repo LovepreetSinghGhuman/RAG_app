@@ -12,8 +12,7 @@ warnings.filterwarnings("ignore")
 load_dotenv()
 
 # --- Setup ---
-DEVICE = "cuda" if torch.cuda.is_available() else "cpu"  # Use GPU if available, else fallback to CPU
-DB_PATH = os.getenv("VECTOR_DB_PATH", "db/chroma")  # Vector DB storage path, overridable via .env
+from config.config import DEVICE, DB_PATH, EMBEDDING_MODEL_NAME, EMBEDDING_KWARGS
 
 
 def load_docs(docs_path="docs"):
@@ -59,23 +58,27 @@ def chunk_documents(docs_path, chunk_size=800, chunk_overlap=0):
     return chunks
 
 def create_embeddings_vector(chunks, vector_db_path="db/chroma"):
-    print("Creating embeddings for the chunks...")
-
-    # Using HuggingFaceEmbeddings instead of OpenAIEmbeddings for better performance and flexibility (offering multiple models and offline use)
-    embedding_model = HuggingFaceEmbeddings( 
-        model_name="BAAI/bge-small-en-v1.5",  # good balance of speed/quality for English text
-        model_kwargs={"device": DEVICE},        # change to "cuda" if NVIDIA GPU available; For ROCm check PyTorch ROCm support (rocm.7.2.1 and above)
-        encode_kwargs={"normalize_embeddings": True, "batch_size": 32},  # recommended for BGE models (cosine similarity)
+    embedding_model = HuggingFaceEmbeddings(
+        model_name=EMBEDDING_MODEL_NAME,
+        model_kwargs={"device": DEVICE},
+        encode_kwargs=EMBEDDING_KWARGS,
     )
 
-    print("Writing embeddings to the vector database...")
+    if os.path.exists(vector_db_path) and os.listdir(vector_db_path):
+        print(f"Vector DB already exists at {vector_db_path} — skipping ingestion.")
+        return Chroma(
+            persist_directory=vector_db_path,
+            embedding_function=embedding_model,
+            collection_metadata={"hnsw:space": "cosine"},
+        )
+
+    print("Creating embeddings for the chunks...")
     vector_db = Chroma.from_documents(
         documents=chunks,
         embedding=embedding_model,
         persist_directory=vector_db_path,
-        collection_metadata={"hnsw:space": "cosine"}  # optional metadata for the collection
+        collection_metadata={"hnsw:space": "cosine"}
     )
-
     return vector_db
 
 
