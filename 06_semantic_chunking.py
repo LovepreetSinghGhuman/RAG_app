@@ -24,10 +24,8 @@ create_embeddings_vector = module.create_embeddings_vector
 # Here we are implementing the "Semantic" chunking strategy, which splits documents into smaller pieces based on semantic similarity.
 # This is useful for processing large documents that may exceed model input limits or for creating more manageable chunks for embedding and retrieval.
 # Using HuggingFaceEmbeddings instead of OpenAIEmbeddings for better performance and flexibility (offering multiple models and offline use)
-#
+
 # model_name and encode_kwargs come from config.config, so they're guaranteed to match
-# ingestion_pipline.py exactly. A mismatch here would silently produce a different vector
-# space than the one your documents were embedded into, which breaks similarity search.
 embedding_model = HuggingFaceEmbeddings(
     model_name=EMBEDDING_MODEL_NAME,
     model_kwargs={"device": DEVICE},  # change to "cuda" if NVIDIA GPU available; For ROCm check PyTorch ROCm support (rocm.7.2.1 and above)
